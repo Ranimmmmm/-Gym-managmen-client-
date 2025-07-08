@@ -224,6 +224,12 @@ export const SubscriptionsContent: React.FC = () => {
     }
     const revenueHistory: RevenueHistoryItem[] = useMemo(() => getRevenueHistory(subscriptions), [subscriptions]);
 
+    useEffect(() => {
+        if (error) {
+            console.error('Subscriptions error:', error);
+        }
+    }, [error]);
+
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
