@@ -94,20 +94,16 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
 
                 <div className="subscription-card__status">
                     <div className="status-badges">
-                        <span className={`badge ${getStatusColor(subscription.estActif)}`}>
-                            {getStatusText(subscription.estActif)}
-                        </span>
-
-                        {isExpired && (
-                            <span className="badge badge--status-expire">
-                                Expiré
-                            </span>
+                        {isExpired ? (
+                            <span className="badge badge--status-expire bg-red-100 text-red-800">Expiré</span>
+                        ) : subscription.estActif ? (
+                            <span className="badge badge--status-actif bg-green-100 text-green-800">Actif</span>
+                        ) : (
+                            <span className="badge badge--status-inactif bg-red-100 text-red-800">Inactif</span>
                         )}
 
-                        {isExpiringSoon && !isExpired && (
-                            <span className="badge badge--status-suspendu">
-                                Expire bientôt
-                            </span>
+                        {!isExpired && isExpiringSoon && (
+                            <span className="badge badge--status-suspendu bg-yellow-100 text-yellow-800">Expire bientôt</span>
                         )}
                     </div>
 

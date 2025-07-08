@@ -56,5 +56,9 @@ export const api = {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
+    }).then(handleResponse),
+
+    deleteSubscription: (id: number) => fetch(`${API_BASE_URL}/subscriptions/${id}`, {
+        method: 'DELETE'
     }).then(handleResponse)
 } 

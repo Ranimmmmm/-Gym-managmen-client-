@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Header } from '@/components/layout/Header'
 import Membres from '@/pages/Members'
-import { Subscriptions } from '@/pages/Subscriptions'
+import Subscriptions from '@/pages/Subscriptions'
 import { MemberForm } from '@/components/forms/MemberForm'
 import { useMembers } from '@/app/hooks/useMembers'
 import { useModal } from '@/app/hooks/useModal'

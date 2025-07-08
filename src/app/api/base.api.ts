@@ -5,7 +5,6 @@ export class ApiClient {
 
   constructor(baseURL: string = API_BASE_URL) {
     this.baseURL = baseURL;
-    console.log('API Client initialized with base URL:', this.baseURL);
   }
 
   private async request<T>(
@@ -13,7 +12,6 @@ export class ApiClient {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
-    console.log('Making API request to:', url);
 
     const config: RequestInit = {
       headers: {
@@ -25,19 +23,15 @@ export class ApiClient {
 
     try {
       const response = await fetch(url, config);
-      console.log('API response status:', response.status, 'for URL:', url);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('API error response:', errorText);
         throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
       }
 
       const data = await response.json();
-      console.log('API response data for', url, ':', data);
       return data;
     } catch (error) {
-      console.error('API request failed for', url, ':', error);
       throw error;
     }
   }

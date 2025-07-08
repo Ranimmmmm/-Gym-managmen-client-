@@ -1,10 +1,10 @@
 // hooks/useMemberSubscriptions.ts
 import { useState, useEffect } from 'react';
-import { MembreAvecAbonnements, Subscription } from '@/types/membre';
+import { membersWithSubscriptions, Subscription } from '@/types/membre';
 import { subscriptionsApi } from '@/app/api/subscriptions';
 
 export const useMemberSubscriptions = () => {
-    const [members, setMembers] = useState<MembreAvecAbonnements[]>([]);
+    const [members, setMembers] = useState<membersWithSubscriptions[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -13,12 +13,7 @@ export const useMemberSubscriptions = () => {
         setError(null);
         try {
             const data = await subscriptionsApi.getMembersWithSubscriptions();
-            // Map 'subscriptions' to 'abonnements' for frontend compatibility
-            const mapped = data.map(member => ({
-                ...member,
-                abonnements: (member as any).subscriptions || []
-            }));
-            setMembers(mapped);
+            setMembers(data);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Erreur inconnue');
         } finally {
@@ -32,14 +27,30 @@ export const useMemberSubscriptions = () => {
 
     // Flatten all subscriptions for convenience
     const subscriptions: (Subscription & { memberName: string })[] = members.flatMap(member =>
-        (member.abonnements || []).map(sub => ({ ...sub, memberName: `${member.prenom} ${member.nom}` }))
+        (member.subscriptions || []).map((sub: Subscription) => ({ ...sub, memberName: `${member.prenom} ${member.nom}` }))
     );
+
+    const deleteSubscription = async (id: number) => {
+        setLoading(true);
+        setError(null);
+        try {
+            await subscriptionsApi.deleteSubscription(id);
+            // Refresh the data after deletion
+            await fetchData();
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Erreur lors de la suppression de l\'abonnement');
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return {
         members,
         subscriptions,
         loading,
         error,
+        deleteSubscription,
         refetch: fetchData,
     };
 };

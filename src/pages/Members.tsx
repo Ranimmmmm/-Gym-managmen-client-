@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Search, UserPlus, Edit, Trash2, Eye, X } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Search, UserPlus, Edit, Trash2, Eye, X, BarChart } from 'lucide-react';
 import { Membre, FormulaireMembre, } from '@/types/membre';
 import { useMembers } from '@/app/hooks/useMembers';
 import { useModal } from '@/app/hooks/useModal';
+import { useConfirmation } from '@/app/hooks/useConfirmation';
 import { Button } from '@/app/common/Button';
+import { ConfirmationModal } from '@/app/common/ConfirmationModal';
 import { MemberForm } from '@/components/forms/MemberForm';
 import { MembreCard } from '@/components/forms/MemberCard';
 import { formatDate, formattelephoneNumber } from '@/utils/formatters';
@@ -38,16 +40,65 @@ export const Membres: React.FC = () => {
     const [activeFilter, setActiveFilter] = useState<FilterType>('all');
     const memberModal = useModal();
     const viewModal = useModal();
+    const confirmationModal = useConfirmation();
+    const [showRevenueHistory, setShowRevenueHistory] = useState(false);
 
     const totalMembers = members.length;
     const activeSubscriptions = membersWithSubscriptions.reduce((total, m) =>
         total + ((m.subscriptions || []).filter((sub: any) => sub.estActif).length || 0), 0
     );
     const unpaidCount = unpaidMembers.length;
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
     const monthlyRevenue = membersWithSubscriptions.reduce((total, m) => {
-        const activeSubs = (m.subscriptions || []).filter((sub: any) => sub.estActif) || [];
+        const activeSubs = (m.subscriptions || []).filter((sub: any) =>
+            sub.estActif &&
+            new Date(sub.dateDébut).getFullYear() <= currentYear &&
+            new Date(sub.dateFin).getFullYear() >= currentYear &&
+            new Date(sub.dateDébut).getMonth() <= currentMonth &&
+            new Date(sub.dateFin).getMonth() >= currentMonth &&
+            new Date(sub.dateDébut) <= now && new Date(sub.dateFin) >= now
+        );
         return total + activeSubs.reduce((subTotal: any, sub: any) => subTotal + sub.prixMensuel, 0);
     }, 0);
+
+    // Revenue history by month
+    type SubscriptionType = { dateDébut: string; dateFin: string; prixMensuel: number };
+    interface RevenueHistoryItem {
+        month: string;
+        revenue: number;
+    }
+    function getRevenueHistory(members: any[]): RevenueHistoryItem[] {
+        const history: Record<string, number> = {};
+        members.forEach((m) => {
+            (m.subscriptions || []).forEach((s: SubscriptionType) => {
+                const start = new Date(s.dateDébut);
+                const end = new Date(s.dateFin);
+                let year = start.getFullYear();
+                let month = start.getMonth();
+                const endYear = end.getFullYear();
+                const endMonth = end.getMonth();
+                while (year < endYear || (year === endYear && month <= endMonth)) {
+                    const key = `${year}-${String(month + 1).padStart(2, '0')}`;
+                    if (!history[key]) history[key] = 0;
+                    history[key] += Number(s.prixMensuel);
+                    // Move to next month
+                    if (month === 11) {
+                        month = 0;
+                        year++;
+                    } else {
+                        month++;
+                    }
+                }
+            });
+        });
+        // Sort by year and month descending
+        return Object.entries(history)
+            .sort((a, b) => b[0].localeCompare(a[0]))
+            .map(([key, value]) => ({ month: key, revenue: value }));
+    }
+    const revenueHistory: RevenueHistoryItem[] = useMemo(() => getRevenueHistory(membersWithSubscriptions), [membersWithSubscriptions]);
 
     // Filtering logic
     let displayedMembers: Membre[] = members;
@@ -96,7 +147,15 @@ export const Membres: React.FC = () => {
     };
 
     const handleDelete = async (id: number) => {
-        if (window.confirm('Êtes-vous sûr de vouloir supprimer ce membre ?')) {
+        const confirmed = await confirmationModal.confirm({
+            title: 'Supprimer le membre',
+            message: 'Êtes-vous sûr de vouloir supprimer ce membre ? Cette action est irréversible.',
+            confirmText: 'Supprimer',
+            cancelText: 'Annuler',
+            type: 'danger'
+        });
+
+        if (confirmed) {
             try {
                 await deleteMember(id);
             } catch (error) {
@@ -118,9 +177,6 @@ export const Membres: React.FC = () => {
         }
         setSelectedMember(null);
     };
-
-    console.log('members:', members);
-    console.log('displayedMembers:', displayedMembers);
 
     if (loading) {
         return <div>Loading...</div>;
@@ -317,6 +373,18 @@ export const Membres: React.FC = () => {
                 isOpen={memberModal.isOpen}
                 onClose={memberModal.closeModal}
                 onSave={handleSave}
+            />
+
+            {/* Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={confirmationModal.isOpen}
+                onClose={confirmationModal.close}
+                onConfirm={confirmationModal.handleConfirm}
+                title={confirmationModal.title}
+                message={confirmationModal.message}
+                confirmText={confirmationModal.confirmText}
+                cancelText={confirmationModal.cancelText}
+                type={confirmationModal.type}
             />
 
             {/* Member Details Modal */}

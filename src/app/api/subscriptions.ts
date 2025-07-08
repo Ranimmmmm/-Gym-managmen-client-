@@ -33,6 +33,10 @@ export const subscriptionsApi = {
     apiClient.put(`/subscriptions/${id}`, data)
   ),
 
+  deleteSubscription: (id: number): Promise<void> => (
+    apiClient.delete(`/subscriptions/${id}`)
+  ),
+
   // Combined data endpoint
   getMembersWithSubscriptions: (): Promise<membersWithSubscriptions[]> => (
     apiClient.get('/members/with-subscriptions')
