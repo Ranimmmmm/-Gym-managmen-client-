@@ -14,6 +14,7 @@ import { SubscriptionCard } from '@/components/forms/SubscriptionCard';
 import { formatDate } from '@/utils/formatters';
 import { subscriptionsApi } from '@/app/api/subscriptions';
 import { SecurityProvider, useSecurity } from '@/app/common/SecurityProvider';
+import { Header } from '@/components/layout/Header';
 
 
 interface SubscriptionFormData {
@@ -248,6 +249,7 @@ export const SubscriptionsContent: React.FC = () => {
 
     return (
         <>
+            <SecuritySettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
             <div className={isUnlocked ? '' : 'filter blur-sm pointer-events-none select-none relative'}>
                 <div className="space-y-6">
                     {/* Header */}
@@ -556,16 +558,8 @@ export const SubscriptionsContent: React.FC = () => {
                             </div>
                         </div>
                     )}
-
-                    <button
-                        className="absolute top-4 right-4 z-50 btn btn--secondary"
-                        onClick={() => setSettingsOpen(true)}
-                    >
-                        Paramètres sécurité
-                    </button>
                 </div>
             </div>
-            <SecuritySettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
             <SecurityModal />
         </>
     );

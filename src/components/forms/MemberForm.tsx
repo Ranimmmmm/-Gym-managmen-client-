@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Membre, FormulaireMembre } from '@/types/membre';
 import { Button } from '@/app/common/Button';
 import { Modal } from '@/app/common/Modal'
@@ -7,7 +7,7 @@ interface MemberFormProps {
     member?: Membre | null;
     isOpen: boolean;
     onClose: () => void;
-    onSave: (data: FormulaireMembre) => Promise<void>;
+    onSave: (data: FormulaireMembre) => Promise<Membre>;
 }
 
 export const MemberForm: React.FC<MemberFormProps> = ({
@@ -23,26 +23,66 @@ export const MemberForm: React.FC<MemberFormProps> = ({
         adresse: member?.adresse || '',
         datedenaissence: member?.datedenaissence || '',
         telParent: member?.telParent || '',
-        dateDebut: member?.dateDebut || '',
+        dateInscription: member?.dateInscription || '',
     });
     const [loading, setLoading] = useState(false);
+    const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
-
-
-
-
-
-
-
-
+    // Reset form data when member changes (for editing)
+    useEffect(() => {
+        setFormData({
+            nom: member?.nom || '',
+            prenom: member?.prenom || '',
+            telephone: member?.telephone || '',
+            adresse: member?.adresse || '',
+            datedenaissence: member?.datedenaissence || '',
+            telParent: member?.telParent || '',
+            dateInscription: member?.dateInscription || '',
+        });
+        setErrors({});
+    }, [member, isOpen]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        console.log('handleSubmit called', formData);
+        // Custom validation for phone number
+        const phoneDigits = formData.telephone.replace(/\D/g, '');
+        const newErrors: { [key: string]: string } = {};
+        if (!phoneDigits || phoneDigits.length !== 8) {
+            newErrors.telephone = 'Le numéro de téléphone doit contenir exactement 8 chiffres.';
+        } else if (!/^\d{8}$/.test(phoneDigits)) {
+            newErrors.telephone = 'Le numéro de téléphone ne doit contenir que des chiffres.';
+        }
+        if (!formData.nom) {
+            newErrors.nom = 'Le nom est obligatoire.';
+        }
+        if (!formData.prenom) {
+            newErrors.prenom = 'Le prénom est obligatoire.';
+        }
+        if (!formData.adresse) {
+            newErrors.adresse = "L'adresse est obligatoire.";
+        }
+        if (!formData.datedenaissence) {
+            newErrors.datedenaissence = 'La date de naissance est obligatoire.';
+        }
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            setLoading(false);
+            return;
+        }
+        setErrors({});
         setLoading(true);
         try {
-            await onSave(formData);
-            onClose();
-        } catch (error) {
+            console.log('Calling onSave with:', formData);
+            const result = await onSave(formData);
+            // Only close modal if result has a valid id
+            if (result && result.id) {
+                onClose();
+            } else {
+                setErrors({ form: "Erreur lors de la création du membre. Veuillez vérifier les champs obligatoires et réessayer." });
+            }
+        } catch (error: any) {
+            setErrors({ form: error?.message || "Erreur lors de la création du membre. Veuillez vérifier les champs obligatoires et réessayer." });
             console.error('Error saving member:', error);
         } finally {
             setLoading(false);
@@ -95,6 +135,9 @@ export const MemberForm: React.FC<MemberFormProps> = ({
                         className="form-input"
                         required
                     />
+                    {errors.telephone && (
+                        <div className="text-red-500 text-sm mt-1">{errors.telephone}</div>
+                    )}
                 </div>
 
                 <div>
@@ -110,13 +153,17 @@ export const MemberForm: React.FC<MemberFormProps> = ({
                 </div>
 
                 <div>
-                    <label className="form-label">Date de naissance (optionnel)</label>
+                    <label className="form-label">Date de naissance <span className="text-red-500">*</span></label>
                     <input
                         type="date"
                         value={formData.datedenaissence}
                         onChange={(e) => handleChange('datedenaissence', e.target.value)}
                         className="form-input"
+                        required
                     />
+                    {errors.datedenaissence && (
+                        <div className="text-red-500 text-sm mt-1">{errors.datedenaissence}</div>
+                    )}
                 </div>
 
                 <div>
@@ -137,8 +184,8 @@ export const MemberForm: React.FC<MemberFormProps> = ({
                         <label className="form-label">Date de début</label>
                         <input
                             type="date"
-                            value={formData.dateDebut}
-                            onChange={(e) => handleChange('dateDebut', e.target.value)}
+                            value={formData.dateInscription}
+                            onChange={(e) => handleChange('dateInscription', e.target.value)}
                             className="form-input"
                             required
                         />
@@ -153,6 +200,9 @@ export const MemberForm: React.FC<MemberFormProps> = ({
                         Annuler
                     </Button>
                 </div>
+                {errors.form && (
+                    <div className="text-red-500 text-sm mt-1">{errors.form}</div>
+                )}
             </form>
         </Modal>
     );

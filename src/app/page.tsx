@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Header } from '@/components/layout/Header'
 import Membres from '@/pages/Members'
 import Subscriptions from '@/pages/Subscriptions'
+import Impayees from '@/pages/Impayees'
 import { MemberForm } from '@/components/forms/MemberForm'
 import { useMembers } from '@/app/hooks/useMembers'
 import { useModal } from '@/app/hooks/useModal'
@@ -30,7 +31,9 @@ export default function HomePage() {
             case 'subscriptions':
                 return <Subscriptions />
             case 'unpaid':
-                return <div className="p-6">Membres impayés - En cours de développement</div>
+                return <div className="p-6">
+                    return <Impayees />
+                </div>
             default:
                 return <Membres />
         }
@@ -50,7 +53,8 @@ export default function HomePage() {
                 isOpen={memberModal.isOpen}
                 onClose={memberModal.closeModal}
                 onSave={async (data) => {
-                    await createMember(data);
+                    console.log('Submitting member:', data);
+                    return await createMember(data);
                 }}
             />
         </Header>

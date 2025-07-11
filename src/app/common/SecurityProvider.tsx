@@ -18,8 +18,8 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const [codeSet, setCodeSet] = useState(false);
 
     useEffect(() => {
-        const unlocked = localStorage.getItem(UNLOCK_KEY) === 'true';
-        setIsUnlocked(unlocked);
+        // Always require password on mount
+        setIsUnlocked(false);
         setCodeSet(!!localStorage.getItem(CODE_KEY));
     }, []);
 
@@ -31,7 +31,7 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const unlock = (code: string) => {
         if (checkCode(code)) {
             setIsUnlocked(true);
-            localStorage.setItem(UNLOCK_KEY, 'true');
+            // Do NOT persist unlock state
             return true;
         }
         return false;
@@ -41,7 +41,7 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         localStorage.setItem(CODE_KEY, newCode);
         setCodeSet(true);
         setIsUnlocked(false);
-        localStorage.removeItem(UNLOCK_KEY);
+        // Do NOT persist unlock state
     };
 
     return (

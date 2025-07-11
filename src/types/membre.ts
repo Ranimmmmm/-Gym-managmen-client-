@@ -20,9 +20,9 @@ export interface FormulaireMembre {
   nom: string;
   telephone: string;
   adresse: string;
-  datedenaissence: string;
+  datedenaissence?: string;
   telParent?: string;
-  dateDebut: string;
+  dateInscription: string;
 }
 
 export interface CreationMembreData extends FormulaireMembre {

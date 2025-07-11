@@ -30,7 +30,7 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
     const isExpiringSoon = new Date(subscription.dateFin) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
     // Use memberName from subscription if available, otherwise fall back to prop
-    const displayMemberName = subscription.memberName || memberName || `Membre #${subscription.membreId}`;
+    const displayMemberName = subscription.memberName || memberName || `Membre #${subscription.prenom}`;
 
     return (
         <div className="subscription-card hover-lift">
@@ -88,7 +88,9 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
 
                     <div className="detail-item">
                         <User className="w-4 h-4 text-gray-500" />
-                        <span className="detail-item__text">Membre #{subscription.membreId}</span>
+                        <span className="detail-item__text">
+                            {displayMemberName}
+                        </span>
                     </div>
                 </div>
 

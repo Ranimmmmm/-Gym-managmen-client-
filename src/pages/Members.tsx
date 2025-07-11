@@ -101,21 +101,21 @@ export const Membres: React.FC = () => {
     const revenueHistory: RevenueHistoryItem[] = useMemo(() => getRevenueHistory(membersWithSubscriptions), [membersWithSubscriptions]);
 
     // Filtering logic
-    let displayedMembers: Membre[] = members;
+    let displayedMembers: Membre[] = members.filter(m => m && m.id);
 
     switch (activeFilter) {
         case 'active-subscriptions':
             displayedMembers = membersWithSubscriptions.filter(m =>
                 (m.subscriptions || []).some((sub: any) => sub.estActif)
-            );
+            ).filter(m => m && m.id);
             break;
         case 'revenue':
             displayedMembers = membersWithSubscriptions.filter(m =>
                 (m.subscriptions || []).some((sub: any) => sub.estActif)
-            );
+            ).filter(m => m && m.id);
             break;
         case 'unpaid':
-            displayedMembers = unpaidMembers;
+            displayedMembers = unpaidMembers.filter(m => m && m.id);
             break;
         default:
             // 'all' filter - no change
@@ -171,11 +171,10 @@ export const Membres: React.FC = () => {
 
     const handleSave = async (data: FormulaireMembre) => {
         if (selectedMember) {
-            await updateMember(selectedMember.id, { ...data, id: selectedMember.id });
+            return await updateMember(selectedMember.id, { ...data, id: selectedMember.id });
         } else {
-            await createMember(data);
+            return await createMember(data);
         }
-        setSelectedMember(null);
     };
 
     if (loading) {
@@ -270,34 +269,37 @@ export const Membres: React.FC = () => {
                 </div>
             ) : viewMode === 'grid' ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {displayedMembers.map(member => (
-                        <div key={member.id} className="relative">
-                            <MembreCard Membre={member} showSubscription />
-                            <div className="absolute top-2 right-2 flex gap-1">
-                                <button
-                                    onClick={() => handleView(member)}
-                                    className="p-1 bg-white rounded-full shadow-md hover:bg-gray-50"
-                                    title="Voir détails"
-                                >
-                                    <Eye className="w-4 h-4 text-gray-600" />
-                                </button>
-                                <button
-                                    onClick={() => handleEdit(member)}
-                                    className="p-1 bg-white rounded-full shadow-md hover:bg-gray-50"
-                                    title="Modifier"
-                                >
-                                    <Edit className="w-4 h-4 text-blue-600" />
-                                </button>
-                                <button
-                                    onClick={() => handleDelete(member.id)}
-                                    className="p-1 bg-white rounded-full shadow-md hover:bg-gray-50"
-                                    title="Supprimer"
-                                >
-                                    <Trash2 className="w-4 h-4 text-red-600" />
-                                </button>
+                    {displayedMembers.map(member => {
+                        console.log('MemberCard data:', member);
+                        return (
+                            <div key={member.id} className="relative">
+                                <MembreCard Membre={member} showSubscription />
+                                <div className="absolute top-2 right-2 flex gap-1">
+                                    <button
+                                        onClick={() => handleView(member)}
+                                        className="p-1 bg-white rounded-full shadow-md hover:bg-gray-50"
+                                        title="Voir détails"
+                                    >
+                                        <Eye className="w-4 h-4 text-gray-600" />
+                                    </button>
+                                    <button
+                                        onClick={() => handleEdit(member)}
+                                        className="p-1 bg-white rounded-full shadow-md hover:bg-gray-50"
+                                        title="Modifier"
+                                    >
+                                        <Edit className="w-4 h-4 text-blue-600" />
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(member.id)}
+                                        className="p-1 bg-white rounded-full shadow-md hover:bg-gray-50"
+                                        title="Supprimer"
+                                    >
+                                        <Trash2 className="w-4 h-4 text-red-600" />
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             ) : (
                 <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
