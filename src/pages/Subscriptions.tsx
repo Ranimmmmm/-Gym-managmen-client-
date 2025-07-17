@@ -3,17 +3,13 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useSubscriptions } from '@/app/hooks/useSubscriptions'
 import { useMembers } from '@/app/hooks/useMembers'
-import { useModal } from '@/app/hooks/useModal';
-import { useConfirmation } from '@/app/hooks/useConfirmation';
 import { Search, CreditCard, Edit, Trash2, Eye, Plus, BarChart } from 'lucide-react';
 import { Subscription } from '@/types/membre';
 import { Button } from '@/app/common/Button';
-import { ConfirmationModal } from '@/app/common/ConfirmationModal';
 import { SubscriptionForm } from '@/components/forms/SubscriptionForm';
 import { SubscriptionCard } from '@/components/forms/SubscriptionCard';
 import { formatDate } from '@/utils/formatters';
 import { subscriptionsApi } from '@/app/api/subscriptions';
-import { SecurityProvider, useSecurity } from '@/app/common/SecurityProvider';
 import { Header } from '@/components/layout/Header';
 
 
@@ -25,77 +21,6 @@ interface SubscriptionFormData {
     dateFin: string;
 }
 
-// Security modal component
-const SecurityModal: React.FC = () => {
-    const { isUnlocked, unlock, codeSet } = useSecurity();
-    const [input, setInput] = useState('');
-    const [error, setError] = useState('');
-    if (isUnlocked) return null;
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm">
-            <div className="bg-white rounded-lg p-8 shadow-lg flex flex-col items-center">
-                <h2 className="text-xl font-bold mb-4">Saisissez le code de sécurité</h2>
-                <input
-                    type="password"
-                    className="form-input mb-2"
-                    value={input}
-                    onChange={e => setInput(e.target.value)}
-                    placeholder="Code de sécurité"
-                />
-                {error && <div className="text-red-600 mb-2">{error}</div>}
-                <button
-                    className="btn btn--primary w-full"
-                    onClick={() => {
-                        if (!unlock(input)) setError('Code incorrect');
-                    }}
-                >
-                    Valider
-                </button>
-                {!codeSet && <div className="text-xs text-gray-500 mt-2">Aucun code défini. Veuillez demander à l'admin de définir un code.</div>}
-            </div>
-        </div>
-    );
-};
-
-// Settings modal for admin to set code
-const SecuritySettingsModal: React.FC<{ open: boolean; onClose: () => void }> = ({ open, onClose }) => {
-    const { changeCode, codeSet } = useSecurity();
-    const [newCode, setNewCode] = useState('');
-    const [success, setSuccess] = useState(false);
-    useEffect(() => {
-        // If no code is set and there is an env code, set it
-        if (!codeSet && process.env.NEXT_PUBLIC_SECURITY_CODE) {
-            changeCode(process.env.NEXT_PUBLIC_SECURITY_CODE);
-        }
-    }, [codeSet, changeCode]);
-    if (!open) return null;
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm">
-            <div className="bg-white rounded-lg p-8 shadow-lg flex flex-col items-center">
-                <h2 className="text-xl font-bold mb-4">Définir le code de sécurité</h2>
-                <input
-                    type="password"
-                    className="form-input mb-2"
-                    value={newCode}
-                    onChange={e => setNewCode(e.target.value)}
-                    placeholder="Nouveau code"
-                />
-                <button
-                    className="btn btn--primary w-full"
-                    onClick={() => {
-                        changeCode(newCode);
-                        setSuccess(true);
-                        setTimeout(onClose, 1000);
-                    }}
-                >
-                    Définir le code
-                </button>
-                {success && <div className="text-green-600 mt-2">Code défini !</div>}
-            </div>
-        </div>
-    );
-};
-
 export const SubscriptionsContent: React.FC = () => {
     const { subscriptions, membersWithSubscriptions, loading, error, refetch } = useSubscriptions();
     const { members } = useMembers();
@@ -104,11 +29,6 @@ export const SubscriptionsContent: React.FC = () => {
     const [selectedSubscription, setSelectedSubscription] = useState<any | null>(null);
     const [showRevenueHistory, setShowRevenueHistory] = useState(false);
     const [settingsOpen, setSettingsOpen] = useState(false);
-    const { isUnlocked } = useSecurity();
-
-    const subscriptionModal = useModal();
-    const viewModal = useModal();
-    const confirmationModal = useConfirmation();
 
     // Create a map of member names for quick lookup
     const memberMap = new Map(members.map(member => [member.id, `${member.prenom} ${member.nom}`]));
@@ -125,31 +45,19 @@ export const SubscriptionsContent: React.FC = () => {
 
     const handleEdit = (subscription: any) => {
         setSelectedSubscription(subscription);
-        subscriptionModal.openModal();
     };
 
     const handleDelete = async (id: number) => {
-        const confirmed = await confirmationModal.confirm({
-            title: 'Supprimer l\'abonnement',
-            message: 'Êtes-vous sûr de vouloir supprimer cet abonnement ? Cette action est irréversible.',
-            confirmText: 'Supprimer',
-            cancelText: 'Annuler',
-            type: 'danger'
-        });
-
-        if (confirmed) {
-            try {
-                await subscriptionsApi.deleteSubscription(id);
-                refetch();
-            } catch (error) {
-                console.error('Error deleting subscription:', error);
-            }
+        try {
+            await subscriptionsApi.deleteSubscription(id);
+            refetch();
+        } catch (error) {
+            console.error('Error deleting subscription:', error);
         }
     };
 
     const handleView = (subscription: any) => {
         setSelectedSubscription(subscription);
-        viewModal.openModal();
     };
 
     const handleSave = async (data: SubscriptionFormData) => {
@@ -249,8 +157,7 @@ export const SubscriptionsContent: React.FC = () => {
 
     return (
         <>
-            <SecuritySettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
-            <div className={isUnlocked ? '' : 'filter blur-sm pointer-events-none select-none relative'}>
+            <div>
                 <div className="space-y-6">
                     {/* Header */}
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white rounded-lg p-6 shadow-sm border">
@@ -258,7 +165,7 @@ export const SubscriptionsContent: React.FC = () => {
                             <h1 className="text-2xl font-bold text-gray-900">Abonnements</h1>
                             <p className="text-gray-600">Gérez les abonnements de vos membres</p>
                         </div>
-                        <Button onClick={() => subscriptionModal.openModal()} className="transition-all duration-200 hover-lift">
+                        <Button onClick={() => { }} className="transition-all duration-200 hover-lift">
                             <Plus className="w-4 h-4 mr-2" />
                             Nouvel abonnement
                         </Button>
@@ -471,28 +378,16 @@ export const SubscriptionsContent: React.FC = () => {
                     )}
 
                     {/* Subscription Form Modal */}
-                    <SubscriptionForm
+                    {/* <SubscriptionForm
                         subscription={selectedSubscription}
                         isOpen={subscriptionModal.isOpen}
                         onClose={subscriptionModal.closeModal}
                         onSave={handleSave}
                         members={members}
-                    />
-
-                    {/* Confirmation Modal */}
-                    <ConfirmationModal
-                        isOpen={confirmationModal.isOpen}
-                        onClose={confirmationModal.close}
-                        onConfirm={confirmationModal.handleConfirm}
-                        title={confirmationModal.title}
-                        message={confirmationModal.message}
-                        confirmText={confirmationModal.confirmText}
-                        cancelText={confirmationModal.cancelText}
-                        type={confirmationModal.type}
-                    />
+                    /> */}
 
                     {/* Subscription Details Modal */}
-                    {viewModal.isOpen && selectedSubscription && (
+                    {/* {viewModal.isOpen && selectedSubscription && (
                         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
                             <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-medium">
                                 <div className="flex justify-between items-center mb-6">
@@ -557,18 +452,13 @@ export const SubscriptionsContent: React.FC = () => {
                                 </div>
                             </div>
                         </div>
-                    )}
+                    )} */}
                 </div>
             </div>
-            <SecurityModal />
         </>
     );
 };
 
 export default function SubscriptionsPage() {
-    return (
-        <SecurityProvider>
-            <SubscriptionsContent />
-        </SecurityProvider>
-    );
+    return <SubscriptionsContent />;
 } 
