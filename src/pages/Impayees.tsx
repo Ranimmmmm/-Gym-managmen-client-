@@ -9,8 +9,6 @@ import { SubscriptionForm } from '@/components/forms/SubscriptionForm';
 import { subscriptionsApi } from '@/app/api/subscriptions';
 import { Header } from '@/components/layout/Header';
 
-// Page: Membres impayés (Unpaid Members)
-// This page lists all members without an active subscription and allows renewal.
 
 const ImpayeesContent: React.FC = () => {
     // const { isUnlocked } = useSecurity();
