@@ -47,7 +47,10 @@ const ImpayeesContent: React.FC = () => {
         const lastSub = (selectedMember.subscriptions || [])
             .sort((a: any, b: any) => new Date(b.dateFin).getTime() - new Date(a.dateFin).getTime())[0];
         if (lastSub && lastSub.id) {
-            await subscriptionsApi.renewSubscription(lastSub.id, data);
+            await subscriptionsApi.renewSubscription(lastSub.id, {
+                subscriptionId: lastSub.id,
+                durationMonths: data.durationMonths
+            });
         } else {
             await subscriptionsApi.createSubscription(data);
         }
@@ -159,6 +162,7 @@ const ImpayeesContent: React.FC = () => {
                         onSave={handleRenewSave}
                         members={[{ id: selectedMember.id, prenom: selectedMember.prenom, nom: selectedMember.nom }]}
                         subscription={null}
+                        isRenewal={true}
                     />
                 )}
             </div>

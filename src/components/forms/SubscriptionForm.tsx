@@ -9,6 +9,7 @@ interface SubscriptionFormData {
     prixMensuel: number;
     dateDébut: string;
     dateFin: string;
+    durationMonths?: number;
 }
 
 interface SubscriptionFormProps {
@@ -17,6 +18,7 @@ interface SubscriptionFormProps {
     onClose: () => void;
     onSave: (data: SubscriptionFormData) => Promise<void>;
     members: Array<{ id: number; prenom: string; nom: string }>;
+    isRenewal?: boolean;
 }
 
 export const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
@@ -25,6 +27,7 @@ export const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
     onClose,
     onSave,
     members,
+    isRenewal = false,
 }) => {
     const [formData, setFormData] = useState<SubscriptionFormData>({
         membreId: subscription?.membreId || 0,
@@ -32,6 +35,7 @@ export const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
         prixMensuel: subscription?.prixMensuel || 0,
         dateDébut: subscription?.dateDébut || '',
         dateFin: subscription?.dateFin || '',
+        durationMonths: 1,
     });
     const [loading, setLoading] = useState(false);
 
@@ -39,7 +43,12 @@ export const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
         e.preventDefault();
         setLoading(true);
         try {
-            await onSave(formData);
+            // Ensure custom sport type is set if "Autre" is selected
+            const finalFormData = { ...formData };
+            if (formData.typeSport === 'Autre' && customSportType.trim()) {
+                finalFormData.typeSport = customSportType.trim();
+            }
+            await onSave(finalFormData);
             onClose();
         } catch (error) {
             console.error('Error saving subscription:', error);
@@ -48,24 +57,31 @@ export const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
         }
     };
 
-    const handleChange = (field: keyof SubscriptionFormData, value: string | number) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
-    };
-
     const sportTypes = [
         'Karaté',
         'Musculation',
         'Box',
         'Aerobic',
-        'Cardio',
-        'CrossFit'
+        'Kingfo',
+        'Gymnastic Bac',
+        'Autre'
     ];
+
+    const [customSportType, setCustomSportType] = useState('');
+
+    const handleChange = (field: keyof SubscriptionFormData, value: string | number) => {
+        setFormData(prev => ({ ...prev, [field]: value }));
+    };
+
+    const handleSportTypeChange = (value: string) => {
+        setFormData(prev => ({ ...prev, typeSport: value }));
+    };
 
     return (
         <Modal isOpen={isOpen} onClose={onClose}>
             <form onSubmit={handleSubmit} className="space-y-6">
                 <h2 className="text-xl font-bold text-gray-800 mb-6">
-                    {subscription ? 'Modifier l\'abonnement' : 'Nouvel abonnement'}
+                    {isRenewal ? 'Renouveler l\'abonnement' : (subscription ? 'Modifier l\'abonnement' : 'Nouvel abonnement')}
                 </h2>
 
                 <div>
@@ -89,7 +105,7 @@ export const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
                     <label className="form-label">Type de sport</label>
                     <select
                         value={formData.typeSport}
-                        onChange={(e) => handleChange('typeSport', e.target.value)}
+                        onChange={(e) => handleSportTypeChange(e.target.value)}
                         className="form-input"
                         required
                     >
@@ -100,6 +116,19 @@ export const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
                             </option>
                         ))}
                     </select>
+                    {formData.typeSport === 'Autre' && (
+                        <input
+                            type="text"
+                            placeholder="Type de sport personnalisé"
+                            value={customSportType}
+                            onChange={(e) => {
+                                setCustomSportType(e.target.value);
+                                setFormData(prev => ({ ...prev, typeSport: e.target.value }));
+                            }}
+                            className="form-input mt-2"
+                            required
+                        />
+                    )}
                 </div>
 
                 <div>
@@ -138,6 +167,23 @@ export const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
                         />
                     </div>
                 </div>
+
+                {isRenewal && (
+                    <div>
+                        <label className="form-label">Durée de renouvellement (mois)</label>
+                        <select
+                            value={formData.durationMonths || 1}
+                            onChange={(e) => handleChange('durationMonths', parseInt(e.target.value))}
+                            className="form-input"
+                            required
+                        >
+                            <option value={1}>1 mois</option>
+                            <option value={3}>3 mois</option>
+                            <option value={6}>6 mois</option>
+                            <option value={12}>12 mois</option>
+                        </select>
+                    </div>
+                )}
 
                 <div className="flex gap-3 pt-4">
                     <Button type="submit" loading={loading} className="flex-1 transition-all duration-200">

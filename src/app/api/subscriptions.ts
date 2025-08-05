@@ -16,6 +16,12 @@ interface SubscriptionFormData {
   dateDébut: string;
   dateFin: string;
 }
+
+interface RenewalData {
+  subscriptionId: number;
+  durationMonths: number;
+}
+
 export const subscriptionsApi = {
   getSubscriptions: (): Promise<Abonnement[]> => apiClient.get('/subscriptions'),
   createSubscription: (data: SubscriptionFormData) =>
@@ -29,7 +35,7 @@ export const subscriptionsApi = {
         durationMonths: 1
       }
     ),
-  renewSubscription: (id: number, data: Partial<SubscriptionFormData>): Promise<Abonnement> => (
+  renewSubscription: (id: number, data: RenewalData): Promise<Abonnement> => (
     apiClient.put(`/subscriptions/${id}`, data)
   ),
 
