@@ -35,6 +35,9 @@ export const subscriptionsApi = {
         durationMonths: 1
       }
     ),
+  updateSubscription: (id: number, data: SubscriptionFormData): Promise<Abonnement> => (
+    apiClient.put(`/subscriptions/${id}`, data)
+  ),
   renewSubscription: (id: number, data: RenewalData): Promise<Abonnement> => (
     apiClient.put(`/subscriptions/${id}`, data)
   ),

@@ -29,6 +29,7 @@ export const SubscriptionsContent: React.FC = () => {
     const [selectedSubscription, setSelectedSubscription] = useState<any | null>(null);
     const [showRevenueHistory, setShowRevenueHistory] = useState(false);
     const [settingsOpen, setSettingsOpen] = useState(false);
+    const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
 
     // Create a map of member names for quick lookup
     const memberMap = new Map(members.map(member => [member.id, `${member.prenom} ${member.nom}`]));
@@ -45,6 +46,7 @@ export const SubscriptionsContent: React.FC = () => {
 
     const handleEdit = (subscription: any) => {
         setSelectedSubscription(subscription);
+        setSubscriptionModalOpen(true);
     };
 
     const handleDelete = async (id: number) => {
@@ -62,12 +64,24 @@ export const SubscriptionsContent: React.FC = () => {
 
     const handleSave = async (data: SubscriptionFormData) => {
         try {
-            await subscriptionsApi.createSubscription(data);
+            if (selectedSubscription) {
+                // Update existing subscription
+                await subscriptionsApi.updateSubscription(selectedSubscription.id, data);
+            } else {
+                // Create new subscription
+                await subscriptionsApi.createSubscription(data);
+            }
             refetch();
         } catch (error) {
             console.error('Error saving subscription:', error);
         }
         setSelectedSubscription(null);
+        setSubscriptionModalOpen(false);
+    };
+
+    const handleNewSubscription = () => {
+        setSelectedSubscription(null);
+        setSubscriptionModalOpen(true);
     };
 
     // Calculate statistics
@@ -165,7 +179,7 @@ export const SubscriptionsContent: React.FC = () => {
                             <h1 className="text-2xl font-bold text-gray-900">Abonnements</h1>
                             <p className="text-gray-600">Gérez les abonnements de vos membres</p>
                         </div>
-                        <Button onClick={() => { }} className="transition-all duration-200 hover-lift">
+                        <Button onClick={handleNewSubscription} className="transition-all duration-200 hover-lift">
                             <Plus className="w-4 h-4 mr-2" />
                             Nouvel abonnement
                         </Button>
@@ -378,13 +392,13 @@ export const SubscriptionsContent: React.FC = () => {
                     )}
 
                     {/* Subscription Form Modal */}
-                    {/* <SubscriptionForm
+                    <SubscriptionForm
                         subscription={selectedSubscription}
-                        isOpen={subscriptionModal.isOpen}
-                        onClose={subscriptionModal.closeModal}
+                        isOpen={subscriptionModalOpen}
+                        onClose={() => setSubscriptionModalOpen(false)}
                         onSave={handleSave}
                         members={members}
-                    /> */}
+                    />
 
                     {/* Subscription Details Modal */}
                     {/* {viewModal.isOpen && selectedSubscription && (
